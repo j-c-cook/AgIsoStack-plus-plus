@@ -112,6 +112,9 @@ namespace isobus
 		bool retVal = false;
 		twai_message_t message = {};
 
+        message.rtr = 0; // Message is not a remote frame
+        message.ss = 0;
+
 		message.identifier = canFrame.identifier;
 		message.extd = canFrame.isExtendedFrame;
 		message.data_length_code = canFrame.dataLength;
