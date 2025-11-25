@@ -15,6 +15,7 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -454,7 +455,7 @@ namespace isobus
 		void set_active_mask(std::uint16_t value);
 
 	private:
-		static constexpr std::uint32_t MIN_OBJECT_LENGTH = 18; ///< The fewest bytes of IOP data that can represent this object
+		static constexpr std::uint32_t MIN_OBJECT_LENGTH = 16; ///< The fewest bytes of IOP data that can represent this object
 
 		std::vector<std::string> languageCodes; ///< A list of 2 character language codes, like "en"
 		std::uint16_t activeMask = NULL_OBJECT_ID; ///< The currently active mask for this working set
@@ -3160,7 +3161,7 @@ namespace isobus
 			CrossedOut = 1, ///< Crossed-out font style (strikethrough)
 			Underlined = 2, ///< Underlined font style
 			Italic = 3, ///< Italic font style
-			Inverted = 4, ///< Inverted font style (upside down)
+			Inverted = 4, ///< Inverted font style (exchange background and pen colours)
 			Flashing = 5, ///< Flashing font style
 			FlashingHidden = 6, ///< Flashing between hidden and shown font style
 			ProportionalFontRendering = 7 ///< Enables proportional font rendering if supported by the server
@@ -4538,6 +4539,20 @@ namespace isobus
 		std::uint8_t pointerType = 0; ///< The pointer type, defines how this should be rendered
 	};
 
+	template<typename T>
+	/// @brief A specialized replacement for std::to_string
+	/// @param object_id An ID of an IsoBus object
+	/// @returns in the case if the object_id is 65535 (NULL object ID) returns "NULL" otherwise it returns the number as string
+	std::string object_id_to_string(T const &object_id)
+	{
+		if (isobus::NULL_OBJECT_ID == object_id)
+		{
+			return "NULL";
+		}
+		std::ostringstream oss;
+		oss << object_id;
+		return oss.str();
+	}
 } // namespace isobus
 
 #endif // ISOBUS_VIRTUAL_TERMINAL_OBJECTS_HPP

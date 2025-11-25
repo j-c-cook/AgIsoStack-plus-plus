@@ -71,6 +71,7 @@ if(BUILD_EXAMPLES)
   add_subdirectory("examples/virtual_terminal/version3_object_pool")
   add_subdirectory("examples/virtual_terminal/aux_functions")
   add_subdirectory("examples/virtual_terminal/aux_inputs")
+  add_subdirectory("examples/virtual_terminal/iop_parser_tester")
   add_subdirectory("examples/task_controller_client")
   add_subdirectory("examples/task_controller_server")
   add_subdirectory("examples/guidance")
@@ -84,30 +85,6 @@ endif()
 if(ESP_PLATFORM)
   return()
 endif()
-
-install(
-  TARGETS Isobus Utility HardwareIntegration
-  EXPORT isobusTargets
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin)
-
-# Install all the header files for all the libraries
-install(
-  DIRECTORY isobus/include/
-  DESTINATION include
-  FILES_MATCHING
-  PATTERN "*.hpp")
-install(
-  DIRECTORY hardware_integration/include/
-  DESTINATION include
-  FILES_MATCHING
-  PATTERN "*.hpp")
-install(
-  DIRECTORY utility/include/
-  DESTINATION include
-  FILES_MATCHING
-  PATTERN "*.hpp")
 
 install(
   EXPORT isobusTargets

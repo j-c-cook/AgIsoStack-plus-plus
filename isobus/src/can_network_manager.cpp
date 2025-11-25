@@ -443,7 +443,12 @@ namespace isobus
 	std::list<std::shared_ptr<TransportProtocolSessionBase>> isobus::CANNetworkManager::get_active_transport_protocol_sessions(std::uint8_t canPortIndex) const
 	{
 		std::list<std::shared_ptr<TransportProtocolSessionBase>> retVal;
-		retVal.insert(retVal.end(), transportProtocols[canPortIndex]->get_sessions().begin(), transportProtocols[canPortIndex]->get_sessions().end());
+
+		{
+			auto sessions = transportProtocols[canPortIndex]->get_sessions();
+			retVal.insert(retVal.end(), std::make_move_iterator(sessions.begin()), std::make_move_iterator(sessions.end()));
+		}
+
 		retVal.insert(retVal.end(), extendedTransportProtocols[canPortIndex]->get_sessions().begin(), extendedTransportProtocols[canPortIndex]->get_sessions().end());
 		return retVal;
 	}
@@ -617,7 +622,8 @@ namespace isobus
 		{
 			auto requestedPGN = message.get_uint24_at(0);
 
-			if (static_cast<std::uint32_t>(CANLibParameterGroupNumber::AddressClaim) == requestedPGN)
+			if ((static_cast<std::uint32_t>(CANLibParameterGroupNumber::AddressClaim) == requestedPGN) &&
+			    (CANIdentifier::GLOBAL_ADDRESS == message.get_identifier().get_destination_address()))
 			{
 				lastAddressClaimRequestTimestamp_ms.at(channelIndex) = SystemTiming::get_timestamp_ms();
 
@@ -843,6 +849,7 @@ namespace isobus
 				// New device, need to start keeping track of it
 				foundControlFunction = create_external_control_function(NAME(claimedNAME), claimedAddress, rxFrame.channel);
 				LOG_DEBUG("[NM]: A control function claimed address %u on channel %u", foundControlFunction->get_address(), foundControlFunction->get_can_port());
+				process_control_function_state_change_callback(foundControlFunction, ControlFunctionState::Online);
 			}
 			else if ((foundControlFunction->get_address() != claimedAddress) && (claimedAddress < NULL_CAN_ADDRESS))
 			{
@@ -855,6 +862,8 @@ namespace isobus
 					         foundControlFunction->get_address(),
 					         claimedAddress,
 					         foundControlFunction->get_can_port());
+					foundControlFunction->address = claimedAddress;
+					process_control_function_state_change_callback(foundControlFunction, ControlFunctionState::Online);
 				}
 				else
 				{
@@ -863,9 +872,9 @@ namespace isobus
 					         foundControlFunction->get_NAME().get_full_name(),
 					         claimedAddress,
 					         foundControlFunction->get_can_port());
+					foundControlFunction->address = claimedAddress;
 					process_control_function_state_change_callback(foundControlFunction, ControlFunctionState::Online);
 				}
-				foundControlFunction->address = claimedAddress;
 			}
 		}
 	}
@@ -1059,9 +1068,9 @@ namespace isobus
 	void CANNetworkManager::process_can_message_for_global_and_partner_callbacks(const CANMessage &message) const
 	{
 		std::shared_ptr<ControlFunction> messageDestination = message.get_destination_control_function();
-        std::shared_ptr<ControlFunction> messageSource = message.get_source_control_function();
+		std::shared_ptr<ControlFunction> messageSource = message.get_source_control_function();
 
-        if ((nullptr == messageDestination) &&
+		if ((nullptr == messageDestination) &&
 		    ((nullptr != messageSource) ||
 		     ((static_cast<std::uint32_t>(CANLibParameterGroupNumber::ParameterGroupNumberRequest) == message.get_identifier().get_parameter_group_number()) &&
 		      (NULL_CAN_ADDRESS == message.get_identifier().get_source_address()))))
